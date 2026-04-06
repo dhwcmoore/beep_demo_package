@@ -1,29 +1,56 @@
+# =========================
 # Python
+# =========================
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
 
-# OCaml / dune
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Test / cache
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# =========================
+# OCaml / Dune
+# =========================
 _build/
-*.cm*
+**/_build/
+*.cmi
+*.cmo
+*.cmx
+*.cma
+*.cmxa
+*.cmxs
 *.o
+*.a
+*.annot
+*.merlin
 
-# Coq / Rocq
+# =========================
+# Rocq / Coq
+# =========================
 *.vo
 *.vos
 *.vok
 *.glob
 *.aux
-
-# Misc
 .lia.cache
-.runtime_layer.aux
-*.log
 
-# VSCode
+# =========================
+# Editors / OS
+# =========================
 .vscode/
+.idea/
+.DS_Store
 
-
-# Claude / AI tool artifacts
+# =========================
+# Claude / AI tool artefacts
+# =========================
 .claude/
 .claude-cache/
 .claude_history/
@@ -31,8 +58,18 @@ _build/
 claude.log
 claude.json
 claude_config.json
-
-# Generic AI scratch / temp
 .ai/
 .ai_cache/
 .prompts/
+
+# =========================
+# Logs
+# =========================
+*.log
+
+# =========================
+# Generated output
+# Keep the folder placeholder, ignore generated files
+# =========================
+output/*
+!output/.gitkeep
