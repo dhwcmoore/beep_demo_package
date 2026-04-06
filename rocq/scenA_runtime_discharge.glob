@@ -1,0 +1,51 @@
+DIGEST 3fbb61595d55d65008aee850299f5fda
+FscenA_runtime_discharge
+R15:32 beep_bridge_kernel <> <> lib
+R50:63 Coq.Lists.List <> <> lib
+R73:85 Coq.Lists.List ListNotations <> mod
+mod 96:116 <> ScenARuntimeDischarge
+def 133:145 ScenARuntimeDischarge runtime_graph
+R169:172 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R157:168 beep_bridge_kernel <> scenA_region ind
+R173:176 Coq.Init.Datatypes <> list ind
+R178:189 beep_bridge_kernel <> scenA_region ind
+def 206:221 ScenARuntimeDischarge runtime_adjacent
+R228:240 scenA_runtime_discharge ScenARuntimeDischarge runtime_graph def
+binder 224:224 <> g:1
+R252:263 beep_bridge_kernel <> scenA_region ind
+binder 244:245 <> r1:2
+binder 247:248 <> r2:3
+R280:281 Coq.Lists.List <> In def
+R287:287 scenA_runtime_discharge <> g:1 var
+R289:290 scenA_runtime_discharge <> r1:2 var
+R283:284 scenA_runtime_discharge <> r2:3 var
+def 308:320 ScenARuntimeDischarge scenA_runtime
+R324:336 scenA_runtime_discharge ScenARuntimeDischarge runtime_graph def
+binder 349:349 <> r:4
+R366:366 scenA_runtime_discharge <> r:4 var
+R381:386 beep_bridge_kernel <> warmup constr
+R391:391 Coq.Lists.List ListNotations ::list_scope:'['_x_']' not
+R398:398 Coq.Lists.List ListNotations ::list_scope:'['_x_']' not
+R392:397 beep_bridge_kernel <> phase1 constr
+R408:413 beep_bridge_kernel <> phase1 constr
+R418:418 Coq.Lists.List ListNotations ::list_scope:'['_x_']' not
+R425:425 Coq.Lists.List ListNotations ::list_scope:'['_x_']' not
+R419:424 beep_bridge_kernel <> phase2 constr
+R435:440 beep_bridge_kernel <> phase2 constr
+R445:446 Coq.Lists.List ListNotations ::list_scope:'['_']' not
+prf 470:497 ScenARuntimeDischarge scenA_runtime_adjacent_exact
+R520:531 beep_bridge_kernel <> scenA_region ind
+binder 512:513 <> r1:6
+binder 515:516 <> r2:7
+R576:580 Coq.Init.Logic <> ::type_scope:x_'<->'_x not
+R540:555 scenA_runtime_discharge ScenARuntimeDischarge runtime_adjacent def
+R557:569 scenA_runtime_discharge ScenARuntimeDischarge scenA_runtime def
+R571:572 scenA_runtime_discharge <> r1:6 var
+R574:575 scenA_runtime_discharge <> r2:7 var
+R581:594 beep_bridge_kernel <> scenA_adjacent def
+R596:597 scenA_runtime_discharge <> r1:6 var
+R599:600 scenA_runtime_discharge <> r2:7 var
+R641:656 scenA_runtime_discharge ScenARuntimeDischarge runtime_adjacent def
+R659:671 scenA_runtime_discharge ScenARuntimeDischarge scenA_runtime def
+R674:687 beep_bridge_kernel <> scenA_adjacent def
+R763:783 scenA_runtime_discharge ScenARuntimeDischarge <> mod

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Beep Before Bang — Risk Report</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f4f4f4; margin: 0; padding: 0; color: #222; }
+    .container { max-width: 860px; margin: 40px auto; background: #fff;
+                  border-radius: 8px; box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+                  overflow: hidden; }
+    .header { background: #c0550a; color: #fff; padding: 32px 40px 24px; }
+    .header h1 { margin: 0 0 4px; font-size: 1.6em; letter-spacing: 0.02em; }
+    .header .subtitle { opacity: 0.85; font-size: 0.95em; }
+    .risk-banner { background: #fdf0e3; border-left: 6px solid #c0550a;
+                    padding: 20px 40px; display: flex; align-items: center; gap: 32px; }
+    .risk-level { font-size: 2.4em; font-weight: 800; color: #c0550a; }
+    .risk-score { font-size: 1.1em; color: #555; }
+    .risk-score span { font-size: 1.5em; font-weight: 700; color: #c0550a; }
+    .section { padding: 24px 40px; border-top: 1px solid #eee; }
+    .section h2 { font-size: 1.05em; text-transform: uppercase;
+                   letter-spacing: 0.08em; color: #666; margin: 0 0 14px; }
+    .scores { display: flex; gap: 32px; }
+    .score-box { background: #f8f8f8; border-radius: 6px; padding: 16px 24px;
+                  flex: 1; text-align: center; }
+    .score-box .label { font-size: 0.8em; color: #888; text-transform: uppercase;
+                          letter-spacing: 0.05em; margin-bottom: 6px; }
+    .score-box .value { font-size: 2em; font-weight: 700; color: #333; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.92em; }
+    th { text-align: left; padding: 8px 10px; background: #f0f0f0;
+          font-size: 0.8em; text-transform: uppercase; letter-spacing: 0.05em; }
+    td { padding: 8px 10px; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
+    .interp { background: #fdf0e3; border-radius: 6px; padding: 16px 20px;
+                font-size: 0.95em; line-height: 1.6; color: #333;
+                border-left: 4px solid #c0550a; }
+    .phase-timeline { display: flex; align-items: stretch; gap: 0; margin-top: 4px; }
+    .phase { flex: 1; padding: 14px 16px; border-radius: 6px; font-size: 0.9em; }
+    .phase.calm    { background: #e8f5ee; border-left: 4px solid #1a9e5c; }
+    .phase.stress  { background: #fdf6e3; border-left: 4px solid #d4920a; }
+    .phase.collapse { background: #fdeaea; border-left: 4px solid #b01414; }
+    .phase-label { font-weight: 700; margin-bottom: 3px; }
+    .phase-detail { font-family: monospace; font-size: 0.85em; color: #555; margin-bottom: 4px; }
+    .phase-note { font-size: 0.82em; color: #666; }
+    .phase-arrow { display: flex; align-items: center; padding: 0 8px;
+                    color: #aaa; font-size: 1.4em; }
+    .footer { padding: 16px 40px; background: #f8f8f8; font-size: 0.8em; color: #999;
+               border-top: 1px solid #eee; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>Beep Before Bang</h1>
+    <div class="subtitle">4-Node Compute Cluster — Structural Early Warning Report</div>
+  </div>
+
+  <div class="risk-banner">
+    <div class="risk-level">HIGH</div>
+    <div class="risk-score">
+      Composite risk score<br>
+      <span>5.766</span> / 10.0
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Signal Scores</h2>
+    <div class="scores">
+      <div class="score-box">
+        <div class="label">Rupture Score</div>
+        <div class="value">2.302</div>
+      </div>
+      <div class="score-box">
+        <div class="label">Invariant Score</div>
+        <div class="value">10.0</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Interpretation</h2>
+    <div class="interp">Elevated risk: temporal load instability and topological deviation are both present. The cluster is in a stressed state — ring integrity or connectivity is degraded. Mitigation should be prepared now.</div>
+  </div>
+
+  
+  <div class="section">
+    <h2>Scenario Phases</h2>
+    <div class="phase-timeline">
+      <div class="phase calm">
+        <div class="phase-label">Phase 1 — Calm</div>
+        <div class="phase-detail">from 2020-03-12</div>
+        <div class="phase-note">Nominal operation. No confirmed alarms.</div>
+      </div>
+      <div class="phase-arrow">→</div>
+      <div class="phase stress">
+        <div class="phase-label">Phase 2 — Stress onset</div>
+        <div class="phase-detail">from 2020-04-09</div>
+        <div class="phase-note">Rupture confirmed here. Structural break detected.</div>
+      </div>
+      <div class="phase-arrow">→</div>
+      <div class="phase collapse">
+        <div class="phase-label">Phase 3 — Collapse</div>
+        <div class="phase-detail">from 2020-05-07</div>
+        <div class="phase-note">Continued deterioration after confirmed break.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Rupture Events</h2>
+    <table>
+      <tr>
+        <th>Candidate raised</th>
+        <th>Confirmed</th>
+        <th style="text-align:right;">Peak ρ</th>
+        <th style="text-align:right;">Confirm lag</th>
+      </tr>
+      
+        <tr>
+          <td>2020-01-03</td>
+          <td>2020-01-07</td>
+          <td style="text-align:right;">2.3403</td>
+          <td style="text-align:right;">3</td>
+        </tr>
+        <tr>
+          <td>2020-04-08<br><span style="color:#888;font-size:0.85em;">Early warning raised at end of calm phase; confirmed at stress onset.</span></td>
+          <td>2020-04-10</td>
+          <td style="text-align:right;">2.0176</td>
+          <td style="text-align:right;">3</td>
+        </tr>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Detected Issues — Cluster Topology (Invariant Engine)</h2>
+    <table>
+      <tr><th>Severity</th><th>Code</th></tr>
+      
+        <tr>
+          <td><span style="background:#d4920a;color:#fff;padding:2px 8px;border-radius:3px;font-size:0.85em;font-weight:bold;">WARNING</span></td>
+          <td style="font-family:monospace;">CLUSTER_RING_VIOLATED</td>
+        </tr>
+        <tr>
+          <td><span style="background:#b01414;color:#fff;padding:2px 8px;border-radius:3px;font-size:0.85em;font-weight:bold;">CRITICAL</span></td>
+          <td style="font-family:monospace;">CONNECTIVITY_PARTITION</td>
+        </tr>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Topology Stages</h2>
+    <table>
+      <tr><th>Stage</th><th>System</th><th style="text-align:center;">b₀</th><th style="text-align:center;">b₁</th></tr>
+      
+        <tr>
+          <td>Nominal: 4-node cluster (s0─s1─s2─s3─s0)</td>
+          <td style="font-family:monospace;">cluster_nominal</td>
+          <td style="text-align:center;">1</td>
+          <td style="text-align:center;">1</td>
+        </tr>
+        <tr>
+          <td>Fault: link l23 (s2→s3) has failed</td>
+          <td style="font-family:monospace;">cluster_link_fault</td>
+          <td style="text-align:center;">1</td>
+          <td style="text-align:center;">0</td>
+        </tr>
+        <tr>
+          <td>Fault: links l12 (s1→s2) and l30 (s3→s0) both failed</td>
+          <td style="font-family:monospace;">cluster_partition</td>
+          <td style="text-align:center;">2</td>
+          <td style="text-align:center;">0</td>
+        </tr>
+    </table>
+  </div>
+
+  <div class="footer">
+    Generated by Beep Before Bang pipeline &nbsp;·&nbsp; beep_output.json
+  </div>
+
+</div>
+</body>
+</html>

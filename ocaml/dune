@@ -1,0 +1,25 @@
+(executable
+ (name run_beep_bridge_audit)
+ (modules
+  beep_bridge_types
+  beep_bridge_ingest
+  beep_bridge_mapping
+  run_beep_bridge_audit)
+ (libraries yojson))
+
+(executable
+ (name beep_bridge_test)
+ (modules
+  beep_bridge_types
+  beep_bridge_ingest
+  beep_bridge_mapping
+  beep_bridge_test)
+ (libraries yojson))
+
+(executable
+ (name test_canonical)
+ (modules
+  beep_bridge_types
+  beep_bridge_ingest
+  test_canonical)
+ (libraries yojson))

@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Beep Before Bang — Structural Early Warning</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f5f5;
+      color: #1a1a1a;
+      font-size: 15px;
+      line-height: 1.55;
+    }
+
+    .page {
+      max-width: 860px;
+      margin: 32px auto;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.10);
+      overflow: hidden;
+    }
+
+    /* ── Header ─────────────────────────────────────── */
+    .header {
+      background: #1a2a3a;
+      color: #fff;
+      padding: 36px 48px 28px;
+    }
+    .header-eyebrow {
+      font-size: 0.75em;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      opacity: 0.55;
+      margin-bottom: 8px;
+    }
+    .header h1 {
+      font-size: 2.0em;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      margin-bottom: 10px;
+    }
+    .header .tagline {
+      font-size: 1.05em;
+      opacity: 0.80;
+      max-width: 560px;
+      line-height: 1.5;
+    }
+
+    /* ── Content sections ────────────────────────────── */
+    .body { padding: 0 48px; }
+
+    .section {
+      padding: 28px 0;
+      border-bottom: 1px solid #ebebeb;
+    }
+    .section:last-child { border-bottom: none; }
+
+    .section-label {
+      font-size: 0.72em;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #888;
+      margin-bottom: 10px;
+    }
+
+    .section p {
+      color: #333;
+      max-width: 680px;
+    }
+
+    /* ── Problem / Solution split ────────────────────── */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-top: 4px;
+    }
+    .col-box {
+      background: #f8f8f8;
+      border-radius: 7px;
+      padding: 18px 20px;
+    }
+    .col-box .box-label {
+      font-size: 0.72em;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      color: #999;
+      margin-bottom: 6px;
+    }
+    .col-box p { color: #333; font-size: 0.95em; }
+
+    /* ── Mechanism ───────────────────────────────────── */
+    .mechanism {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      margin-top: 8px;
+    }
+    .mech-signal {
+      flex: 1;
+      background: #f0f4f8;
+      border-radius: 7px;
+      padding: 14px 16px;
+    }
+    .mech-signal .sig-label {
+      font-size: 0.72em;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      color: #888;
+      margin-bottom: 4px;
+    }
+    .mech-signal .sig-name {
+      font-weight: 700;
+      color: #1a2a3a;
+      font-size: 0.95em;
+    }
+    .mech-signal .sig-desc {
+      font-size: 0.85em;
+      color: #555;
+      margin-top: 3px;
+    }
+    .mech-arrow {
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      color: #bbb;
+      font-size: 1.3em;
+    }
+    .mech-output {
+      flex: 1;
+      background: #1a2a3a;
+      color: #fff;
+      border-radius: 7px;
+      padding: 14px 16px;
+    }
+    .mech-output .sig-label { color: rgba(255,255,255,0.45); }
+    .mech-output .sig-name  { color: #fff; }
+    .mech-output .sig-desc  { color: rgba(255,255,255,0.65); }
+
+    /* ── Result box ──────────────────────────────────── */
+    .result-box {
+      background: #fdf0e3;
+      border: 1.5px solid #c0550a;
+      border-radius: 8px;
+      padding: 22px 24px;
+      margin-top: 8px;
+    }
+    .result-header {
+      display: flex;
+      align-items: baseline;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .result-level {
+      font-size: 1.8em;
+      font-weight: 800;
+      color: #c0550a;
+    }
+    .result-score {
+      font-size: 1.0em;
+      color: #7a3a0a;
+    }
+    .result-score strong { font-size: 1.3em; }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .result-cell {}
+    .result-cell-label {
+      font-size: 0.72em;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      color: #9a5a2a;
+      margin-bottom: 3px;
+    }
+    .result-cell-value {
+      font-size: 0.9em;
+      color: #3a1a0a;
+    }
+    .result-cell-value code {
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 0.9em;
+      background: rgba(0,0,0,0.06);
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+
+    .timeline-row {
+      display: flex;
+      gap: 0;
+      margin-top: 4px;
+    }
+    .tl-phase {
+      flex: 1;
+      padding: 10px 12px;
+      border-radius: 5px;
+      font-size: 0.85em;
+    }
+    .tl-phase.calm    { background: #e8f5ee; }
+    .tl-phase.stress  { background: #fff3cc; border: 1.5px solid #d4920a; }
+    .tl-phase.collapse { background: #fdeaea; }
+    .tl-label   { font-weight: 700; font-size: 0.8em; color: #333; }
+    .tl-date    { font-size: 0.75em; color: #666; font-family: monospace; }
+    .tl-note    { font-size: 0.78em; color: #555; margin-top: 2px; }
+    .tl-arrow   { display: flex; align-items: center; padding: 0 6px; color: #bbb; }
+
+    .advisories {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 0.80em;
+      font-family: monospace;
+      font-weight: 600;
+    }
+    .badge-critical { background: #fdeaea; color: #b01414; border: 1px solid #e0a0a0; }
+    .badge-warning  { background: #fdf6e3; color: #8a5a00; border: 1px solid #e0d090; }
+
+    /* ── Report screenshot ───────────────────────────── */
+    .screenshot-box {
+      margin-top: 8px;
+      border-radius: 7px;
+      overflow: hidden;
+      border: 1px solid #ddd;
+      box-shadow: 0 1px 8px rgba(0,0,0,0.08);
+    }
+    .screenshot-box img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+    .screenshot-caption {
+      font-size: 0.72em;
+      color: #999;
+      text-align: right;
+      margin-top: 5px;
+    }
+
+    /* ── Why it matters ──────────────────────────────── */
+    .why-box {
+      background: #1a2a3a;
+      color: #fff;
+      border-radius: 7px;
+      padding: 18px 22px;
+      margin-top: 8px;
+      font-size: 0.95em;
+      line-height: 1.6;
+    }
+    .why-box strong { color: #aed4f0; }
+
+    /* ── Status ──────────────────────────────────────── */
+    .status-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 8px;
+    }
+    .status-item {
+      display: flex;
+      gap: 8px;
+      font-size: 0.88em;
+      color: #444;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 5px;
+    }
+    .dot-done    { background: #1a9e5c; }
+    .dot-next    { background: #d4920a; }
+    .dot-planned { background: #aaa; }
+
+    /* ── Footer ──────────────────────────────────────── */
+    .footer {
+      background: #f5f5f5;
+      border-top: 1px solid #e8e8e8;
+      padding: 14px 48px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.78em;
+      color: #999;
+    }
+    .footer strong { color: #555; }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-eyebrow">Early Warning System</div>
+    <h1>Beep Before Bang</h1>
+    <p class="tagline">
+      We monitor a compute cluster from two independent perspectives
+      and raise a warning before structural failure becomes operationally visible.
+    </p>
+  </div>
+
+  <div class="body">
+
+    <!-- Problem / Solution -->
+    <div class="section">
+      <div class="section-label">The problem</div>
+      <div class="two-col">
+        <div class="col-box">
+          <div class="box-label">Conventional monitoring</div>
+          <p>Detects failure after it becomes visible — alerts fire when services are already degraded, traffic is already rerouting, and the window for clean intervention has already closed.</p>
+        </div>
+        <div class="col-box">
+          <div class="box-label">Beep Before Bang</div>
+          <p>Detects structural breakdown as it begins — before the partition is complete, before the alert queue fills up, while there is still time to isolate, reroute, or recover cleanly.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mechanism -->
+    <div class="section">
+      <div class="section-label">How it works</div>
+      <div class="mechanism">
+        <div class="mech-signal">
+          <div class="sig-label">Signal 1 — Temporal</div>
+          <div class="sig-name">Rupture engine</div>
+          <div class="sig-desc">Detects regime shifts in cluster load telemetry using change-point analysis. Fires when behaviour departs from the established baseline.</div>
+        </div>
+        <div class="mech-arrow">+</div>
+        <div class="mech-signal">
+          <div class="sig-label">Signal 2 — Structural</div>
+          <div class="sig-name">Invariant engine</div>
+          <div class="sig-desc">Monitors the cluster's topology via algebraically-certified Betti numbers. Fires when connectivity departs from the certified design state.</div>
+        </div>
+        <div class="mech-arrow">→</div>
+        <div class="mech-output">
+          <div class="sig-label">Output</div>
+          <div class="sig-name">Fused early warning</div>
+          <div class="sig-desc">Composite risk score with actionable advisories — reroute, isolate, or halt cross-island workloads — before full partition is visible.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Demo result -->
+    <div class="section">
+      <div class="section-label">Demo result — 4-node compute cluster</div>
+      <div class="result-box">
+        <div class="result-header">
+          <div class="result-level">HIGH</div>
+          <div class="result-score">Risk score <strong>5.766</strong> / 10.0</div>
+        </div>
+
+        <div class="result-grid">
+          <div class="result-cell">
+            <div class="result-cell-label">Rupture signal</div>
+            <div class="result-cell-value">
+              Score 2.302 · Candidate raised <code>2020-04-08</code> · Confirmed <code>2020-04-10</code>
+            </div>
+          </div>
+          <div class="result-cell">
+            <div class="result-cell-label">Invariant signal</div>
+            <div class="result-cell-value">
+              Score 10.0 · b₀: 1→2 (cluster split) · b₁: 1→0 (ring broken)
+            </div>
+          </div>
+        </div>
+
+        <!-- Phase timeline -->
+        <div class="result-cell-label" style="margin-bottom:6px;">Phase timeline</div>
+        <div class="timeline-row">
+          <div class="tl-phase calm">
+            <div class="tl-label">Calm</div>
+            <div class="tl-date">from 2020-03-12</div>
+            <div class="tl-note">No alarms. Baseline stable.</div>
+          </div>
+          <div class="tl-arrow">→</div>
+          <div class="tl-phase stress">
+            <div class="tl-label">⚠ Stress onset</div>
+            <div class="tl-date">from 2020-04-09</div>
+            <div class="tl-note">Warning raised 2020-04-08. Confirmed 2020-04-10.</div>
+          </div>
+          <div class="tl-arrow">→</div>
+          <div class="tl-phase collapse">
+            <div class="tl-label">Collapse</div>
+            <div class="tl-date">from 2020-05-07</div>
+            <div class="tl-note">Continued deterioration.</div>
+          </div>
+        </div>
+
+        <!-- Advisories -->
+        <div class="advisories">
+          <div class="badge badge-critical">&#9679; CRITICAL &nbsp; CONNECTIVITY_PARTITION — cluster split into 2 isolated islands</div>
+          <div class="badge badge-warning">&#9679; WARNING &nbsp; CLUSTER_RING_VIOLATED — ring routing path destroyed</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Report screenshot -->
+    <div class="section">
+      <div class="section-label">Full pipeline output</div>
+      <div class="screenshot-box">
+        <img src="beep_report_screenshot.png" alt="Beep Before Bang — Risk Report output">
+      </div>
+      <div class="screenshot-caption">beep_report.html — generated by a single command</div>
+    </div>
+
+    <!-- Why it matters -->
+    <div class="section">
+      <div class="section-label">Why it matters</div>
+      <div class="why-box">
+        The system remained <strong>quiet during the full calm phase</strong>.
+        The warning candidate was raised on the <strong>last day of calm</strong>
+        and confirmed within <strong>two periods of stress onset</strong> —
+        before the partition was operationally visible, while rerouting
+        and workload isolation were still clean options.
+        <br><br>
+        Earlier warning means a larger response window. The difference between
+        a controlled failover and an uncontrolled outage is often measured in minutes.
+      </div>
+    </div>
+
+    <!-- Current status -->
+    <div class="section">
+      <div class="section-label">Current status</div>
+      <div class="status-grid">
+        <div class="status-item"><span class="status-dot dot-done"></span>Working demo: single-command run, JSON + HTML output</div>
+        <div class="status-item"><span class="status-dot dot-done"></span>Unified domain: both signals on the same cluster object</div>
+        <div class="status-item"><span class="status-dot dot-done"></span>Calibrated: four fixture variants all pass mechanical test</div>
+        <div class="status-item"><span class="status-dot dot-done"></span>Frozen reference bundles: v1 and v2</div>
+        <div class="status-item"><span class="status-dot dot-next"></span>Second alarm at collapse phase (optional refinement)</div>
+        <div class="status-item"><span class="status-dot dot-next"></span>Infrastructure-native timestamps (cosmetic)</div>
+        <div class="status-item"><span class="status-dot dot-planned"></span>Third signal: LoopAudit coherence layer</div>
+        <div class="status-item"><span class="status-dot dot-planned"></span>Integration into VeriBound product shell</div>
+      </div>
+    </div>
+
+  </div><!-- /body -->
+
+  <div class="footer">
+    <span><strong>Beep Before Bang</strong> — Structural Early Warning System</span>
+    <span>Demo v2 · 2026-04-05</span>
+  </div>
+
+</div>
+</body>
+</html>
