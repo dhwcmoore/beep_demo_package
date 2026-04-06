@@ -1,0 +1,10 @@
+Calibration run: 20260405T202519Z
+PASS: no confirmed in Phase1 (50–69) AND confirmed in Phase2 (70–89)
+FAIL: confirmed event in Phase 1 (false alarm during calm)
+
+Fixture                 Config        Verdict     Confirmed rows
+---------------------------------------------------------------------------
+scenA_base              stress_demo   PASS        [3, 71]
+scenB_calm_calm         stress_demo   PASS        [3, 71]
+scenC_vol_led           stress_demo   PASS        [3, 71]
+scenD_gap_onset         stress_demo   PASS        [3, 71]

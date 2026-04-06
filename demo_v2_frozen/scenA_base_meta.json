@@ -1,0 +1,31 @@
+{
+  "name": "scenA_base",
+  "total_rows": 110,
+  "warmup_start": 0,
+  "warmup_end": 49,
+  "phase1_start": 50,
+  "phase1_end": 69,
+  "phase2_start": 70,
+  "phase2_end": 89,
+  "phase3_start": 90,
+  "phase3_end": 109,
+  "warmup_ts": "2020-01-02",
+  "phase1_ts": "2020-03-12",
+  "phase2_ts": "2020-04-09",
+  "phase3_ts": "2020-05-07",
+  "phase1_params": {
+    "mu": 0.003,
+    "sigma": 0.008,
+    "vol": 1000000
+  },
+  "phase2_params": {
+    "mu": -0.005,
+    "sigma": 0.025,
+    "vol": 3000000
+  },
+  "phase3_params": {
+    "mu": -0.012,
+    "sigma": 0.04,
+    "vol": 6000000
+  }
+}
