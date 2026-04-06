@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.pyc
+
+# OCaml / dune
+_build/
+*.cm*
+*.o
+
+# Coq / Rocq
+*.vo
+*.vos
+*.vok
+*.glob
+*.aux
+
+# Misc
+.lia.cache
+.runtime_layer.aux
+*.log
+
+# VSCode
+.vscode/
+
+
+# Claude / AI tool artifacts
+.claude/
+.claude-cache/
+.claude_history/
+.claude_logs/
+claude.log
+claude.json
+claude_config.json
+
+# Generic AI scratch / temp
+.ai/
+.ai_cache/
+.prompts/
