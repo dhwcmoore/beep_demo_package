@@ -1,0 +1,98 @@
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+
+# =========================
+# Rust
+# =========================
+target/
+
+# =========================
+# OCaml
+# =========================
+_build/
+
+# =========================
+# Rocq/Coq
+# =========================
+*.vo
+*.vos
+*.vok
+
+# =========================
+# Output
+# =========================
+output/*
+!output/.gitkeep
+env/
+
+# Test / cache
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# =========================
+# OCaml / Dune
+# =========================
+_build/
+**/_build/
+*.cmi
+*.cmo
+*.cmx
+*.cma
+*.cmxa
+*.cmxs
+*.o
+*.a
+*.annot
+*.merlin
+
+# =========================
+# Rocq / Coq
+# =========================
+*.vo
+*.vos
+*.vok
+*.glob
+*.aux
+.lia.cache
+
+# =========================
+# Editors / OS
+# =========================
+.vscode/
+.idea/
+.DS_Store
+
+# =========================
+# Claude / AI tool artefacts
+# =========================
+.claude/
+.claude-cache/
+.claude_history/
+.claude_logs/
+claude.log
+claude.json
+claude_config.json
+.ai/
+.ai_cache/
+.prompts/
+
+# =========================
+# Logs
+# =========================
+*.log
+
+# =========================
+# Generated output
+# Keep the folder placeholder, ignore generated files
+# =========================
+output/*
+!output/.gitkeep

@@ -1,0 +1,181 @@
+{
+  "risk_score": 5.852,
+  "risk_level": "CRITICAL",
+  "structural_break": true,
+  "structural_reason": "cycle_loss",
+  "structural_judgement_source": "ocaml",
+  "structural_semantics_version": "v1",
+  "structural_inputs": {
+    "nominal_b0": 1,
+    "nominal_b1": 1,
+    "fault_b0": 1,
+    "fault_b1": 0
+  },
+  "rupture_semantics_version": "v1",
+  "rupture_contract": "rupture_contract.v",
+  "rupture_features": {
+    "event_count": 4,
+    "filtered_event_count": 4,
+    "max_peak_rho": 13.892031859388117,
+    "phase_threshold": 70
+  },
+  "semantic_contracts": {
+    "structural_semantics_version": "v1",
+    "structural_judgement_source": "ocaml",
+    "structural_contract": "structural_judgement_contract.v",
+    "rupture_contract": "rupture_contract.v",
+    "risk_contract": "risk_escalation_contract.v",
+    "guardrails_enforced": true
+  },
+  "signals": {
+    "rupture_score": 7.368,
+    "invariant_score": 4.0,
+    "rupture": {
+      "engine": "rupture-engine",
+      "event_count": 4,
+      "raw": [
+        {
+          "candidate_index": 76,
+          "candidate_timestamp": "2020-04-17",
+          "confirmed_index": 77,
+          "confirmed_timestamp": "2020-04-20",
+          "peak_rho": 13.184899955038816,
+          "confirmation_k": 3,
+          "confirmation_m": 2
+        },
+        {
+          "candidate_index": 78,
+          "candidate_timestamp": "2020-04-21",
+          "confirmed_index": 90,
+          "confirmed_timestamp": "2020-05-07",
+          "peak_rho": 12.674112092684306,
+          "confirmation_k": 3,
+          "confirmation_m": 2
+        },
+        {
+          "candidate_index": 91,
+          "candidate_timestamp": "2020-05-08",
+          "confirmed_index": 92,
+          "confirmed_timestamp": "2020-05-11",
+          "peak_rho": 13.293370769863854,
+          "confirmation_k": 3,
+          "confirmation_m": 2
+        },
+        {
+          "candidate_index": 93,
+          "candidate_timestamp": "2020-05-12",
+          "confirmed_index": 98,
+          "confirmed_timestamp": "2020-05-19",
+          "peak_rho": 13.892031859388117,
+          "confirmation_k": 3,
+          "confirmation_m": 2
+        }
+      ],
+      "classified_events": [
+        {
+          "candidate_index": 76,
+          "candidate_timestamp": "2020-04-17",
+          "confirmed_index": 77,
+          "confirmed_timestamp": "2020-04-20",
+          "peak_rho": 13.184899955038816,
+          "confirmation_k": 3,
+          "confirmation_m": 2,
+          "classification": "Primary Rupture"
+        },
+        {
+          "candidate_index": 78,
+          "candidate_timestamp": "2020-04-21",
+          "confirmed_index": 90,
+          "confirmed_timestamp": "2020-05-07",
+          "peak_rho": 12.674112092684306,
+          "confirmation_k": 3,
+          "confirmation_m": 2,
+          "classification": "Primary Rupture"
+        },
+        {
+          "candidate_index": 91,
+          "candidate_timestamp": "2020-05-08",
+          "confirmed_index": 92,
+          "confirmed_timestamp": "2020-05-11",
+          "peak_rho": 13.293370769863854,
+          "confirmation_k": 3,
+          "confirmation_m": 2,
+          "classification": "Escalation"
+        },
+        {
+          "candidate_index": 93,
+          "candidate_timestamp": "2020-05-12",
+          "confirmed_index": 98,
+          "confirmed_timestamp": "2020-05-19",
+          "peak_rho": 13.892031859388117,
+          "confirmation_k": 3,
+          "confirmation_m": 2,
+          "classification": "Escalation"
+        }
+      ],
+      "scenario_meta": {
+        "name": "scenA_base",
+        "total_rows": 110,
+        "warmup_start": 0,
+        "warmup_end": 49,
+        "phase1_start": 50,
+        "phase1_end": 69,
+        "phase2_start": 70,
+        "phase2_end": 89,
+        "phase3_start": 90,
+        "phase3_end": 109,
+        "warmup_ts": "2020-01-02",
+        "phase1_ts": "2020-03-12",
+        "phase2_ts": "2020-04-09",
+        "phase3_ts": "2020-05-07",
+        "phase1_params": {
+          "mu": 0.003,
+          "sigma": 0.008,
+          "vol": 1000000
+        },
+        "phase2_params": {
+          "mu": -0.005,
+          "sigma": 0.025,
+          "vol": 3000000
+        },
+        "phase3_params": {
+          "mu": -0.012,
+          "sigma": 0.04,
+          "vol": 6000000
+        }
+      },
+      "detection_start_index": null,
+      "warmup_mode": "adaptive_with_fallback"
+    },
+    "invariants": {
+      "engine": "boundary-invariants",
+      "mode": "real",
+      "nominal_betti": {
+        "b0": 1,
+        "b1": 1
+      },
+      "fault_betti": {
+        "b0": 1,
+        "b1": 0
+      },
+      "structural_inputs": {
+        "nominal_b0": 1,
+        "nominal_b1": 1,
+        "fault_b0": 1,
+        "fault_b1": 0
+      },
+      "structural_judgement": "SJ_CycleLoss",
+      "structural_judgement_source": "ocaml",
+      "structural_semantics_version": "v1",
+      "advisories": [
+        {
+          "code": "CLUSTER_RING_VIOLATED",
+          "severity": "WARNING",
+          "delta_b1": -1,
+          "message": "Cycle count dropped from 1 to 0."
+        }
+      ],
+      "raw_output": "=== Cluster Invariant Demo ===\nNominal Betti: {0: 1, 1: 1}\nFault Betti: {0: 1, 1: 0}\n"
+    }
+  }
+}

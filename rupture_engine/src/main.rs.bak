@@ -1,0 +1,673 @@
+use clap::Parser;
+use csv::{ReaderBuilder, WriterBuilder};
+use serde::{Deserialize, Serialize};
+use std::cmp::Ordering;
+use std::error::Error;
+use std::fs;
+use std::path::{Path, PathBuf};
+
+#[derive(Parser, Debug)]
+#[command(name = "rupture-engine")]
+#[command(about = "Self-contained rupture detector for Beep Before Bang")]
+struct Cli {
+    #[arg(long)]
+    input: PathBuf,
+
+    #[arg(long)]
+    config: PathBuf,
+
+    #[arg(long)]
+    output_dir: PathBuf,
+}
+
+#[derive(Debug, Deserialize)]
+struct Config {
+    io: Option<IoConfig>,
+    preprocess: Option<PreprocessConfig>,
+    numerics: Option<NumericsConfig>,
+    windows: Option<WindowsConfig>,
+    features: Option<FeaturesConfig>,
+    robust: Option<RobustConfig>,
+    residuals: Option<ResidualsConfig>,
+    combine: Option<CombineConfig>,
+    memory: Option<MemoryConfig>,
+    capacity: Option<CapacityConfig>,
+    detection: Option<DetectionConfig>,
+    state_machine: Option<StateMachineConfig>,
+    outputs: Option<OutputsConfig>,
+}
+
+#[derive(Debug, Deserialize, Default)]
+struct IoConfig {
+    timestamp_column: Option<String>,
+    open_column: Option<String>,
+    high_column: Option<String>,
+    low_column: Option<String>,
+    close_column: Option<String>,
+    volume_column: Option<String>,
+    parse_timestamps: Option<bool>,
+    drop_invalid_rows: Option<bool>,
+    sort_by_timestamp: Option<bool>,
+}
+
+#[derive(Debug, Deserialize, Default)]
+struct PreprocessConfig {
+    require_positive_close: Option<bool>,
+    allow_zero_volume: Option<bool>,
+    min_rows: Option<usize>,
+}
+
+#[derive(Debug, Deserialize, Default)]
+struct NumericsConfig {
+    eps: Option<f64>,
+    clip_residuals: Option<bool>,
+    residual_clip_max: Option<f64>,
+}
+
+#[derive(Debug, Deserialize, Default)]
+struct WindowsConfig {
+    robust_scale_n: Option<usize>,
+    memory_k: Option<usize>,
+    capacity_l: Option<usize>,
+}
+
+#[derive(Debug, Deserialize, Default)]
+struct FeaturesConfig {
+    use_log_returns: Option<bool>,
+}
+
+#[derive(Debug, Deserialize, Default)]
+struct RobustConfig {
+    mad_scale_factor: Option<f64>,
+    use_volume_median: Option<bool>,
+}
+
+#[derive(Debug, Deserialize, Default)]
+struct ResidualsConfig {
+    theta_vol: Option<f64>,
+    theta_liq: Option<f64>,
+    theta_acc: Option<f64>,
+}
+
+#[derive(Debug, Deserialize, Default)]
+struct CombineConfig {
+    tau: Option<f64>,
+}
+
+#[derive(Debug, Deserialize, Default)]
+struct MemoryConfig {
+    alpha: Option<f64>,
+}
+
+#[derive(Debug, Deserialize, Default)]
+struct CapacityConfig {
+    q: Option<f64>,
+    smooth: Option<bool>,
+    lambda: Option<f64>,
+    e_min: Option<f64>,
+}
+
+#[derive(Debug, Deserialize, Default)]
+struct DetectionConfig {
+    auto_warmup_min: Option<usize>,
+    auto_warmup_stable_bars: Option<usize>,
+    auto_warmup_rel_tol: Option<f64>,
+}
+
+#[derive(Debug, Deserialize, Default)]
+struct StateMachineConfig {
+    rho_stressed: Option<f64>,
+    rho_critical: Option<f64>,
+    rho_rupture: Option<f64>,
+    confirm_k: Option<usize>,
+    confirm_m: Option<usize>,
+    enable_recovery: Option<bool>,
+    recovery_hold: Option<usize>,
+}
+
+#[derive(Debug, Deserialize, Default)]
+struct OutputsConfig {
+    write_csv_timeseries: Option<bool>,
+    csv_timeseries_name: Option<String>,
+    write_json_events: Option<bool>,
+    json_events_name: Option<String>,
+    write_json_config_snapshot: Option<bool>,
+    json_config_snapshot_name: Option<String>,
+}
+
+#[derive(Debug)]
+struct EffectiveConfig {
+    timestamp_column: String,
+    close_column: String,
+    volume_column: String,
+    require_positive_close: bool,
+    allow_zero_volume: bool,
+    min_rows: usize,
+    eps: f64,
+    clip_residuals: bool,
+    residual_clip_max: f64,
+    robust_scale_n: usize,
+    memory_k: usize,
+    capacity_l: usize,
+    use_log_returns: bool,
+    mad_scale_factor: f64,
+    use_volume_median: bool,
+    theta_vol: f64,
+    theta_liq: f64,
+    theta_acc: f64,
+    tau: f64,
+    alpha: f64,
+    q: f64,
+    smooth: bool,
+    lambda: f64,
+    e_min: f64,
+    auto_warmup_min: usize,
+    auto_warmup_stable_bars: usize,
+    auto_warmup_rel_tol: f64,
+    rho_stressed: f64,
+    rho_critical: f64,
+    rho_rupture: f64,
+    confirm_k: usize,
+    confirm_m: usize,
+    enable_recovery: bool,
+    recovery_hold: usize,
+    write_csv_timeseries: bool,
+    csv_timeseries_name: String,
+    write_json_events: bool,
+    json_events_name: String,
+    write_json_config_snapshot: bool,
+    json_config_snapshot_name: String,
+}
+
+#[derive(Debug, Clone)]
+struct Row {
+    index: usize,
+    timestamp: String,
+    close: f64,
+    volume: f64,
+}
+
+#[derive(Debug, Serialize)]
+struct Event {
+    candidate_index: usize,
+    candidate_timestamp: String,
+    confirmed_index: Option<usize>,
+    confirmed_timestamp: Option<String>,
+    peak_rho: f64,
+    confirmation_k: usize,
+    confirmation_m: usize,
+}
+
+#[derive(Debug, Serialize)]
+struct TimeseriesRow {
+    index: usize,
+    timestamp: String,
+    close: f64,
+    volume: f64,
+    ret: f64,
+    vol_score: f64,
+    liq_score: f64,
+    acc_score: f64,
+    r_vol: f64,
+    r_liq: f64,
+    r_acc: f64,
+    strain: f64,
+    capacity: f64,
+    rho: f64,
+    state: String,
+    candidate_open: bool,
+}
+
+fn main() -> Result<(), Box<dyn Error>> {
+    let cli = Cli::parse();
+    let raw_config = read_config(&cli.config)?;
+    let cfg = effective_config(raw_config);
+
+    let rows = read_rows(&cli.input, &cfg)?;
+    if rows.len() < cfg.min_rows {
+        return Err(format!(
+            "input has {} rows but min_rows is {}",
+            rows.len(),
+            cfg.min_rows
+        )
+        .into());
+    }
+
+    let (events, timeseries) = detect_ruptures(&rows, &cfg);
+
+    fs::create_dir_all(&cli.output_dir)?;
+
+    if cfg.write_json_events {
+        let events_path = cli.output_dir.join(&cfg.json_events_name);
+        let json = serde_json::to_string_pretty(&events)?;
+        fs::write(events_path, json)?;
+    }
+
+    if cfg.write_csv_timeseries {
+        let ts_path = cli.output_dir.join(&cfg.csv_timeseries_name);
+        write_timeseries_csv(&ts_path, &timeseries)?;
+    }
+
+    if cfg.write_json_config_snapshot {
+        let cfg_path = cli.output_dir.join(&cfg.json_config_snapshot_name);
+        let snapshot = serde_json::to_string_pretty(&serde_json::json!({
+            "effective_config": {
+                "timestamp_column": cfg.timestamp_column,
+                "close_column": cfg.close_column,
+                "volume_column": cfg.volume_column,
+                "require_positive_close": cfg.require_positive_close,
+                "allow_zero_volume": cfg.allow_zero_volume,
+                "min_rows": cfg.min_rows,
+                "eps": cfg.eps,
+                "clip_residuals": cfg.clip_residuals,
+                "residual_clip_max": cfg.residual_clip_max,
+                "robust_scale_n": cfg.robust_scale_n,
+                "memory_k": cfg.memory_k,
+                "capacity_l": cfg.capacity_l,
+                "use_log_returns": cfg.use_log_returns,
+                "mad_scale_factor": cfg.mad_scale_factor,
+                "use_volume_median": cfg.use_volume_median,
+                "theta_vol": cfg.theta_vol,
+                "theta_liq": cfg.theta_liq,
+                "theta_acc": cfg.theta_acc,
+                "tau": cfg.tau,
+                "alpha": cfg.alpha,
+                "q": cfg.q,
+                "smooth": cfg.smooth,
+                "lambda": cfg.lambda,
+                "e_min": cfg.e_min,
+                "rho_stressed": cfg.rho_stressed,
+                "rho_critical": cfg.rho_critical,
+                "rho_rupture": cfg.rho_rupture,
+                "confirm_k": cfg.confirm_k,
+                "confirm_m": cfg.confirm_m,
+                "enable_recovery": cfg.enable_recovery,
+                "recovery_hold": cfg.recovery_hold
+            }
+        }))?;
+        fs::write(cfg_path, snapshot)?;
+    }
+
+    println!(
+        "{} confirmed rupture event(s) written to {}",
+        events.iter().filter(|e| e.confirmed_timestamp.is_some()).count(),
+        cli.output_dir.display()
+    );
+
+    Ok(())
+}
+
+fn read_config(path: &Path) -> Result<Config, Box<dyn Error>> {
+    let text = fs::read_to_string(path)?;
+    let cfg: Config = toml::from_str(&text)?;
+    Ok(cfg)
+}
+
+fn effective_config(c: Config) -> EffectiveConfig {
+    let io = c.io.unwrap_or_default();
+    let pp = c.preprocess.unwrap_or_default();
+    let num = c.numerics.unwrap_or_default();
+    let win = c.windows.unwrap_or_default();
+    let feat = c.features.unwrap_or_default();
+    let rob = c.robust.unwrap_or_default();
+    let res = c.residuals.unwrap_or_default();
+    let comb = c.combine.unwrap_or_default();
+    let mem = c.memory.unwrap_or_default();
+    let cap = c.capacity.unwrap_or_default();
+    let det = c.detection.unwrap_or_default();
+    let sm = c.state_machine.unwrap_or_default();
+    let out = c.outputs.unwrap_or_default();
+
+    EffectiveConfig {
+        timestamp_column: io.timestamp_column.unwrap_or_else(|| "timestamp".to_string()),
+        close_column: io.close_column.unwrap_or_else(|| "close".to_string()),
+        volume_column: io.volume_column.unwrap_or_else(|| "volume".to_string()),
+        require_positive_close: pp.require_positive_close.unwrap_or(true),
+        allow_zero_volume: pp.allow_zero_volume.unwrap_or(true),
+        min_rows: pp.min_rows.unwrap_or(50),
+        eps: num.eps.unwrap_or(1.0e-12),
+        clip_residuals: num.clip_residuals.unwrap_or(true),
+        residual_clip_max: num.residual_clip_max.unwrap_or(25.0),
+        robust_scale_n: win.robust_scale_n.unwrap_or(15),
+        memory_k: win.memory_k.unwrap_or(10),
+        capacity_l: win.capacity_l.unwrap_or(50),
+        use_log_returns: feat.use_log_returns.unwrap_or(true),
+        mad_scale_factor: rob.mad_scale_factor.unwrap_or(1.4826),
+        use_volume_median: rob.use_volume_median.unwrap_or(true),
+        theta_vol: res.theta_vol.unwrap_or(1.50),
+        theta_liq: res.theta_liq.unwrap_or(1.25),
+        theta_acc: res.theta_acc.unwrap_or(1.50),
+        tau: comb.tau.unwrap_or(0.35),
+        alpha: mem.alpha.unwrap_or(0.65),
+        q: cap.q.unwrap_or(0.95),
+        smooth: cap.smooth.unwrap_or(true),
+        lambda: cap.lambda.unwrap_or(0.03),
+        e_min: cap.e_min.unwrap_or(1.0e-6),
+        auto_warmup_min: det.auto_warmup_min.unwrap_or(30),
+        auto_warmup_stable_bars: det.auto_warmup_stable_bars.unwrap_or(8),
+        auto_warmup_rel_tol: det.auto_warmup_rel_tol.unwrap_or(0.05),
+        rho_stressed: sm.rho_stressed.unwrap_or(0.80),
+        rho_critical: sm.rho_critical.unwrap_or(1.05),
+        rho_rupture: sm.rho_rupture.unwrap_or(1.25),
+        confirm_k: sm.confirm_k.unwrap_or(3),
+        confirm_m: sm.confirm_m.unwrap_or(2),
+        enable_recovery: sm.enable_recovery.unwrap_or(true),
+        recovery_hold: sm.recovery_hold.unwrap_or(3),
+        write_csv_timeseries: out.write_csv_timeseries.unwrap_or(true),
+        csv_timeseries_name: out
+            .csv_timeseries_name
+            .unwrap_or_else(|| "rupture_timeseries.csv".to_string()),
+        write_json_events: out.write_json_events.unwrap_or(true),
+        json_events_name: out
+            .json_events_name
+            .unwrap_or_else(|| "rupture_events.json".to_string()),
+        write_json_config_snapshot: out.write_json_config_snapshot.unwrap_or(true),
+        json_config_snapshot_name: out
+            .json_config_snapshot_name
+            .unwrap_or_else(|| "config_used.json".to_string()),
+    }
+}
+
+fn read_rows(path: &Path, cfg: &EffectiveConfig) -> Result<Vec<Row>, Box<dyn Error>> {
+    let mut rdr = ReaderBuilder::new().flexible(true).from_path(path)?;
+    let headers = rdr.headers()?.clone();
+
+    let ts_idx = headers
+        .iter()
+        .position(|h| h == cfg.timestamp_column)
+        .ok_or("missing timestamp column")?;
+    let close_idx = headers
+        .iter()
+        .position(|h| h == cfg.close_column)
+        .ok_or("missing close column")?;
+    let volume_idx = headers
+        .iter()
+        .position(|h| h == cfg.volume_column)
+        .ok_or("missing volume column")?;
+
+    let mut rows = Vec::new();
+
+    for (i, rec) in rdr.records().enumerate() {
+        let rec = rec?;
+        let timestamp = rec.get(ts_idx).unwrap_or("").to_string();
+        let close: f64 = rec.get(close_idx).unwrap_or("").parse()?;
+        let volume: f64 = rec.get(volume_idx).unwrap_or("").parse()?;
+
+        if cfg.require_positive_close && close <= 0.0 {
+            continue;
+        }
+        if !cfg.allow_zero_volume && volume <= 0.0 {
+            continue;
+        }
+
+        rows.push(Row {
+            index: i,
+            timestamp,
+            close,
+            volume,
+        });
+    }
+
+    Ok(rows)
+}
+
+fn detect_ruptures(rows: &[Row], cfg: &EffectiveConfig) -> (Vec<Event>, Vec<TimeseriesRow>) {
+    let n = rows.len();
+    let mut rets = vec![0.0; n];
+    let mut vol_scores = vec![0.0; n];
+    let mut liq_scores = vec![0.0; n];
+    let mut acc_scores = vec![0.0; n];
+    let mut r_vols = vec![0.0; n];
+    let mut r_liqs = vec![0.0; n];
+    let mut r_accs = vec![0.0; n];
+    let mut strains = vec![0.0; n];
+    let mut capacities = vec![1.0; n];
+    let mut rhos = vec![0.0; n];
+    let mut states = vec!["calm".to_string(); n];
+    let mut candidate_flags = vec![false; n];
+    let mut events: Vec<Event> = Vec::new();
+
+    let volumes: Vec<f64> = rows.iter().map(|r| r.volume).collect();
+
+    for i in 1..n {
+        let prev = rows[i - 1].close.max(cfg.eps);
+        let curr = rows[i].close.max(cfg.eps);
+        rets[i] = if cfg.use_log_returns {
+            (curr / prev).ln()
+        } else {
+            (curr - prev) / prev
+        };
+    }
+
+    let mut current_capacity = 1.0;
+    let mut open_candidate: Option<Event> = None;
+    let mut recovery_counter = 0usize;
+    let mut detection_start_idx: Option<usize> = None;
+    let mut stable_capacity_run = 0usize;
+    let mut prev_capacity_for_warmup: Option<f64> = None;
+
+    for i in 0..n {
+
+        // --- Warmup guard ---
+        let detection_active =
+            detection_start_idx.is_some() && i >= detection_start_idx.unwrap();
+        let start = i.saturating_sub(cfg.robust_scale_n.saturating_sub(1));
+        let ret_window: Vec<f64> = rets[start..=i].iter().map(|x| x.abs()).collect();
+        let vol_window: Vec<f64> = volumes[start..=i].to_vec();
+
+        let ret_med = median(&ret_window);
+        let ret_mad = mad(&ret_window, ret_med).max(cfg.eps);
+
+        let vol_base = if cfg.use_volume_median {
+            median(&vol_window)
+        } else {
+            mean(&vol_window)
+        }
+        .max(cfg.eps);
+
+        let vol_norm = (rets[i].abs() - ret_med) / (cfg.mad_scale_factor * ret_mad);
+        vol_scores[i] = vol_norm.max(0.0);
+
+        let liq_raw = rows[i].volume / vol_base;
+        liq_scores[i] = liq_raw.max(0.0);
+
+        let prev_vol_score = if i > 0 { vol_scores[i - 1] } else { 0.0 };
+        let acc_raw = (vol_scores[i] - prev_vol_score).abs();
+        acc_scores[i] = acc_raw;
+
+        r_vols[i] = deadband(vol_scores[i], cfg.theta_vol);
+        r_liqs[i] = deadband(liq_scores[i], cfg.theta_liq);
+        r_accs[i] = deadband(acc_scores[i], cfg.theta_acc);
+
+        if cfg.clip_residuals {
+            r_vols[i] = r_vols[i].min(cfg.residual_clip_max);
+            r_liqs[i] = r_liqs[i].min(cfg.residual_clip_max);
+            r_accs[i] = r_accs[i].min(cfg.residual_clip_max);
+        }
+
+        let combined = r_vols[i] + cfg.tau * r_liqs[i] + 0.5 * r_accs[i];
+
+        if i == 0 {
+            strains[i] = combined;
+        } else {
+            strains[i] = cfg.alpha * strains[i - 1] + (1.0 - cfg.alpha) * combined;
+        }
+
+        let cap_start = i.saturating_sub(cfg.capacity_l.saturating_sub(1));
+        let mut cap_window: Vec<f64> = strains[cap_start..=i].to_vec();
+        let target = quantile(&mut cap_window, cfg.q).max(cfg.e_min);
+
+        if i == 0 || !cfg.smooth {
+            current_capacity = target;
+        } else {
+            current_capacity = (1.0 - cfg.lambda) * current_capacity + cfg.lambda * target;
+            current_capacity = current_capacity.max(cfg.e_min);
+        }
+
+        capacities[i] = current_capacity;
+        rhos[i] = strains[i] / current_capacity.max(cfg.e_min);
+
+        if detection_start_idx.is_none() {
+
+            // HARD fallback: force start no matter what
+            if i >= cfg.auto_warmup_min + cfg.capacity_l / 4 {
+                detection_start_idx = Some(i);
+            }
+            // Otherwise try to detect stability
+            else if i >= cfg.auto_warmup_min {
+                if let Some(prev_cap) = prev_capacity_for_warmup {
+                    let denom = prev_cap.abs().max(cfg.e_min);
+                    let rel_change = (current_capacity - prev_cap).abs() / denom;
+
+                    if rel_change <= cfg.auto_warmup_rel_tol {
+                        stable_capacity_run += 1;
+                    } else {
+                        stable_capacity_run = 0;
+                    }
+
+                    if stable_capacity_run >= cfg.auto_warmup_stable_bars {
+                        detection_start_idx = Some(i + 1);
+                    }
+                }
+            }
+
+            prev_capacity_for_warmup = Some(current_capacity);
+        }
+
+        states[i] = if rhos[i] >= cfg.rho_rupture {
+            "rupture".to_string()
+        } else if rhos[i] >= cfg.rho_critical {
+            "critical".to_string()
+        } else if rhos[i] >= cfg.rho_stressed {
+            "stressed".to_string()
+        } else {
+            "calm".to_string()
+        };
+
+        if detection_active && open_candidate.is_none() && rhos[i] >= cfg.rho_critical {
+            open_candidate = Some(Event {
+                candidate_index: rows[i].index,
+                candidate_timestamp: rows[i].timestamp.clone(),
+                confirmed_index: None,
+                confirmed_timestamp: None,
+                peak_rho: rhos[i],
+                confirmation_k: cfg.confirm_k,
+                confirmation_m: cfg.confirm_m,
+            });
+            candidate_flags[i] = true;
+        } else if detection_active {
+            if let Some(ref mut ev) = open_candidate {
+            if rhos[i] > ev.peak_rho {
+                ev.peak_rho = rhos[i];
+            }
+
+            let window_start = i.saturating_sub(cfg.confirm_k.saturating_sub(1));
+            let window = &rhos[window_start..=i];
+            let hits = window.iter().filter(|x| **x >= cfg.rho_rupture).count();
+
+            if hits >= cfg.confirm_m && ev.confirmed_index.is_none() {
+                ev.confirmed_index = Some(rows[i].index);
+                ev.confirmed_timestamp = Some(rows[i].timestamp.clone());
+                events.push(Event {
+                    candidate_index: ev.candidate_index,
+                    candidate_timestamp: ev.candidate_timestamp.clone(),
+                    confirmed_index: ev.confirmed_index,
+                    confirmed_timestamp: ev.confirmed_timestamp.clone(),
+                    peak_rho: ev.peak_rho,
+                    confirmation_k: ev.confirmation_k,
+                    confirmation_m: ev.confirmation_m,
+                });
+                open_candidate = None;
+                recovery_counter = 0;
+            } else if cfg.enable_recovery {
+                if rhos[i] < cfg.rho_stressed {
+                    recovery_counter += 1;
+                } else {
+                    recovery_counter = 0;
+                }
+
+                if recovery_counter >= cfg.recovery_hold {
+                    open_candidate = None;
+                    recovery_counter = 0;
+                }
+            }
+        }
+    }
+
+    let timeseries: Vec<TimeseriesRow> = (0..n)
+        .map(|i| TimeseriesRow {
+            index: rows[i].index,
+            timestamp: rows[i].timestamp.clone(),
+            close: rows[i].close,
+            volume: rows[i].volume,
+            ret: rets[i],
+            vol_score: vol_scores[i],
+            liq_score: liq_scores[i],
+            acc_score: acc_scores[i],
+            r_vol: r_vols[i],
+            r_liq: r_liqs[i],
+            r_acc: r_accs[i],
+            strain: strains[i],
+            capacity: capacities[i],
+            rho: rhos[i],
+            state: states[i].clone(),
+            candidate_open: candidate_flags[i],
+        })
+        .collect();
+
+    (events, timeseries)
+}
+
+fn write_timeseries_csv(path: &Path, rows: &[TimeseriesRow]) -> Result<(), Box<dyn Error>> {
+    let mut wtr = WriterBuilder::new().from_path(path)?;
+    for row in rows {
+        wtr.serialize(row)?;
+    }
+    wtr.flush()?;
+    Ok(())
+}
+
+fn deadband(x: f64, theta: f64) -> f64 {
+    (x - theta).max(0.0)
+}
+
+fn mean(xs: &[f64]) -> f64 {
+    if xs.is_empty() {
+        0.0
+    } else {
+        xs.iter().sum::<f64>() / xs.len() as f64
+    }
+}
+
+fn median(xs: &[f64]) -> f64 {
+    if xs.is_empty() {
+        return 0.0;
+    }
+    let mut v = xs.to_vec();
+    v.sort_by(cmp_f64);
+    let n = v.len();
+    if n % 2 == 1 {
+        v[n / 2]
+    } else {
+        0.5 * (v[n / 2 - 1] + v[n / 2])
+    }
+}
+
+fn mad(xs: &[f64], med: f64) -> f64 {
+    let devs: Vec<f64> = xs.iter().map(|x| (x - med).abs()).collect();
+    median(&devs)
+}
+
+fn quantile(xs: &mut [f64], q: f64) -> f64 {
+    if xs.is_empty() {
+        return 0.0;
+    }
+    xs.sort_by(cmp_f64);
+    let q = q.clamp(0.0, 1.0);
+    let idx = ((xs.len() - 1) as f64 * q).round() as usize;
+    xs[idx]
+}
+
+fn cmp_f64(a: &f64, b: &f64) -> Ordering {
+    a.partial_cmp(b).unwrap_or(Ordering::Equal)
+}
